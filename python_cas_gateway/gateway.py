@@ -79,6 +79,8 @@ async def make_app():
     args = parser.parse_args()
     app = web.Application()
 
+    print("Configuring...")
+
     app.settings = type('Settings', (object,), dict(
         backend_url=URL(args.backend_url),
         cas_url=URL(args.cas_url),
@@ -89,9 +91,12 @@ async def make_app():
         cas_version=args.cas_version,
     ))()
 
+    print("Connecting to redis...")
     pool = await create_pool(
-        (app.settings.redis_url.host, app.settings.redis_url.port),
-        db=int((app.settings.redis_url.path or '/0').strip('/'))
+        (app.settings.redis_url.host or '127.0.0.1', app.settings.redis_url.port or 6379),
+        db=int(app.settings.redis_url.path.strip('/') or 0),
+        create_connection_timeout=10,
+        password=app.settings.redis_url.password,
     )
 
     session_setup(app, RedisStorage(pool))
@@ -110,7 +115,7 @@ async def make_app():
 def main():
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(make_app())
-    web.run_app(app)
+    web.run_app(app, host=app.settings.bind_host, port=app.settings.bind_port)
 
 
 if __name__ == '__main__':

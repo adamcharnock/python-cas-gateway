@@ -29,8 +29,15 @@ spec:
             httpGet:
               path: /cas-gateway-ready
               port: {{ .Values.service.internalPort }}
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redis
+                  key: redis-password
           command:
             - "cas_gateway"
+          args:
             - "--backend-url"
             - {{ .Values.backendUrl | quote }}
             - "--cas-url"
@@ -46,7 +53,7 @@ spec:
             - "--chunk-size"
             - {{ .Values.chunkSize | quote }}
             - "--redis-url"
-            - 'redis://{{ template "cas-gateway.fullname" . }}/0'
+            - 'redis://user:$(REDIS_PASSWORD)@{{ .Release.Name }}-redis/0'
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
