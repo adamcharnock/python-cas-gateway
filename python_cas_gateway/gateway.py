@@ -3,6 +3,7 @@ import asyncio
 
 import aiohttp
 from aiohttp import web
+from aiohttp.web_response import Response
 from aiohttp_session import setup as session_setup, get_session
 from aiohttp_cas import login_required
 from aiohttp_cas import setup as cas_setup
@@ -13,8 +14,12 @@ from yarl import URL
 CHUNK_SIZE = 10140
 
 
+async def ready_check(request):
+    return Response(content_type='text/plain')
+
+
 @login_required
-async def index(request):
+async def handle(request):
     async with aiohttp.ClientSession() as session:
         session_state = await get_session(request)
         backend_url = request.app.settings.backend_url
@@ -97,7 +102,8 @@ async def make_app():
         version=app.settings.cas_version,
         host_scheme=app.settings.cas_url.scheme
     )
-    app.router.add_route('*', '/{tail:.*}', index)
+    app.router.add_route('GET', '/cas-gateway-ready', ready_check)
+    app.router.add_route('*', '/{tail:.*}', handle)
     return app
 
 

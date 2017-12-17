@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "cas-gateway.fullname" . }}
+  labels:
+    app: {{ template "cas-gateway.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "cas-gateway.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /cas-gateway-ready
+              port: {{ .Values.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /cas-gateway-ready
+              port: {{ .Values.service.internalPort }}
+          command:
+            - "cas_gateway"
+            - "--backend-url"
+            - {{ .Values.backendUrl | quote }}
+            - "--cas-url"
+            - {{ .Values.casUrl | quote }}
+            - "--timeout"
+            - {{ .Values.timeout | quote }}
+            - "--cas-version"
+            - {{ .Values.casVersion | quote }}
+            - "--bind-host"
+            - "0.0.0.0"
+            - "--bind-port"
+            - {{ .Values.service.internalPort | quote }}
+            - "--chunk-size"
+            - {{ .Values.chunkSize | quote }}
+            - "--redis-url"
+            - 'redis://{{ template "cas-gateway.fullname" . }}/0'
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
