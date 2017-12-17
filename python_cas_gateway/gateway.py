@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import logging
 
 import aiohttp
 from aiohttp import web
@@ -8,6 +9,7 @@ from aiohttp_session import setup as session_setup, get_session
 from aiohttp_cas import login_required
 from aiohttp_cas import setup as cas_setup
 from aiohttp_session.redis_storage import RedisStorage
+from aiohttp_remotes import setup as remotes_setup, XForwardedRelaxed
 from aioredis import create_pool
 from yarl import URL
 
@@ -88,7 +90,8 @@ async def make_app():
         timeout=args.timeout,
         bind_host=args.bind_host,
         bind_port=args.bind_port,
-        cas_version=args.cas_version,
+        # aiohttp_cas was this as a string
+        cas_version=str(args.cas_version),
     ))()
 
     print("Connecting to redis...")
@@ -99,20 +102,26 @@ async def make_app():
         password=app.settings.redis_url.password,
     )
 
+    await remotes_setup(app, XForwardedRelaxed())
     session_setup(app, RedisStorage(pool))
+
+    u = app.settings.cas_url
     cas_setup(
         app=app,
-        host=app.settings.cas_url.host,
+        host='{}:{}'.format(u.host, u.port) if u.port != 80 else u.host,
         host_prefix=app.settings.cas_url.path,
         version=app.settings.cas_version,
         host_scheme=app.settings.cas_url.scheme
     )
     app.router.add_route('GET', '/cas-gateway-ready', ready_check)
     app.router.add_route('*', '/{tail:.*}', handle)
+
     return app
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
+
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(make_app())
     web.run_app(app, host=app.settings.bind_host, port=app.settings.bind_port)

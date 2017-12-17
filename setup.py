@@ -18,6 +18,7 @@ setup(
         'aiohttp>=2.3.6,<3',
         'aiohttp-cas>=0.1,<1',
         'aioredis>=1.0.0<2',
+        'aiohttp-remotes==0.0.5',
     ],
     include_package_data=True,
     entry_points={
