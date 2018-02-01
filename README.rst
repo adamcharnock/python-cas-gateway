@@ -36,6 +36,10 @@ Use
       --chunk-size CHUNK_SIZE
                             Chunk size for streaming responses back to the client
                             (default: 4096)
+      --require-attribute REQUIRE_ATTRIBUTE
+                            Require the given CAS attribute to be present and not
+                            set to an empty string. Requires CAS version 3.
+                            (default: None)
 
     required named arguments:
       --backend-url BACKEND_URL
