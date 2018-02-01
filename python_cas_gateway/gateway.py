@@ -4,6 +4,7 @@ import logging
 
 import aiohttp
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPForbidden
 from aiohttp.web_response import Response
 from aiohttp_session import setup as session_setup, get_session
 from aiohttp_cas import login_required
@@ -30,6 +31,10 @@ async def handle(request):
         headers = request.headers.copy()
         headers['Host'] = '{}:{}'.format(backend_url.host, backend_url.port)
         headers['Remote-User'] = session_state['aiohttp_cas']['username']
+
+        if request.app.settings.require_attribute:
+            if not session_state['aiohttp_cas'].get(request.app.settings.require_attribute):
+                raise HTTPForbidden(text="You do not have permission to view this site")
 
         kwargs = dict(
             method=request.method,
@@ -72,6 +77,8 @@ async def make_app():
     parser.add_argument('--cas-version', type=int, help='CAS version in use', default=3)
     parser.add_argument('--chunk-size', type=int, help='Chunk size for streaming responses back to the client',
                         default=1024*4)
+    parser.add_argument('--require-attribute', help='Require the given CAS attribute to be present and '
+                                                    'not set to an empty string. Requires CAS version 3.')
 
     required_named = parser.add_argument_group('required named arguments')
     required_named.add_argument('--backend-url', help='URL to the backend to be proxied (e.g. http://myhost.com:8888)',
@@ -92,6 +99,7 @@ async def make_app():
         bind_port=args.bind_port,
         # aiohttp_cas was this as a string
         cas_version=str(args.cas_version),
+        require_attribute=args.require_attribute,
     ))()
 
     print("Connecting to redis...")
