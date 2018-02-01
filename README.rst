@@ -56,3 +56,10 @@ Docker
     docker build . -t python-cas-gateway
     docker run python-cas-gateway
 
+Updating docker hub
+-------------------
+
+.. code-block:: bash
+
+    docker build -t adamcharnock/python-cas-gateway .
+    docker push adamcharnock/python-cas-gateway
