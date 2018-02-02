@@ -17,6 +17,7 @@ casUrl: ''
 timeout: 10
 casVersion: '3'
 chunkSize: 4096
+requireAttribute: ''
 
 # You must set the redis password in order to
 # avoid the secret being changed when you do a 'helm upgrade'

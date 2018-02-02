@@ -54,6 +54,8 @@ spec:
             - {{ .Values.chunkSize | quote }}
             - "--redis-url"
             - 'redis://user:$(REDIS_PASSWORD)@{{ .Release.Name }}-redis/0'
+            - "--require-attribute"
+            - {{ .Values.requireAttribute | quote }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
