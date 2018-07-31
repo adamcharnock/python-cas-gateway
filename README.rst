@@ -47,6 +47,16 @@ Use
                             http://myhost.com:8888) (default: None)
       --cas-url CAS_URL     URL to the CAS server (default: None)
 
+S3 Support (experimental)
+-------------------------
+
+Backend URLs can also reference Amazon S3 buckets. For example:
+
+.. code-block:: bash
+
+    cas_gateway --backend-url s3://my-bucket --cas-url http://cas.example.com/
+
+The `index.html` suffix will be appended to bucket keys where needed.
 
 Docker
 ------

@@ -21,16 +21,50 @@ async def ready_check(request):
     return Response(content_type='text/plain')
 
 
+def s3_sign(bucket, path):
+    import boto3
+    s3 = boto3.client('s3')
+    url = s3.generate_presigned_url(
+        ClientMethod='get_object',
+        Params={
+            'Bucket': bucket,
+            'Key': path
+        }
+    )
+    return URL(url)
+
+
 @login_required
 async def handle(request):
     async with aiohttp.ClientSession() as session:
         session_state = await get_session(request)
         backend_url = request.app.settings.backend_url
 
-        url = request.url.with_host(backend_url.host).with_port(backend_url.port).with_scheme(backend_url.scheme)
-        headers = request.headers.copy()
-        headers['Host'] = '{}:{}'.format(backend_url.host, backend_url.port)
-        headers['Remote-User'] = session_state['aiohttp_cas']['username']
+        url = (
+            request.url
+            .with_scheme(backend_url.scheme)
+            .with_host(backend_url.host)
+            .with_port(backend_url.port)
+            .with_scheme(backend_url.scheme)
+        )
+
+        if url.scheme == 's3':
+            # This is an S3 backend (s3://bucket/)
+            # Add index.html if we need it
+            file_name = url.path.rstrip('/').split('/')[-1]
+            if '.' not in file_name:
+                url = url.with_path(
+                    '{}/index.html'.format(url.path.strip('/'))
+                )
+            # Create a signed url
+            url = URL(s3_sign(url.host, url.path.strip('/')))
+            # Don't pass any headers through, we'll simply get the file
+            headers = {}
+        else:
+            # Otherwise we have a regular backend
+            headers = request.headers.copy()
+            headers['Host'] = '{}:{}'.format(backend_url.host, backend_url.port)
+            headers['Remote-User'] = session_state['aiohttp_cas']['username']
 
         if request.app.settings.require_attribute:
             if not session_state['aiohttp_cas'].get(request.app.settings.require_attribute):
@@ -43,7 +77,6 @@ async def handle(request):
             headers=headers,
             auth=getattr(request, 'auth', None),
             allow_redirects=False,
-            encoding=request.charset,
             timeout=request.app.settings.timeout,
         )
 
@@ -60,7 +93,7 @@ async def handle(request):
                 chunk = await remote_response.content.read(CHUNK_SIZE)
                 if not chunk:
                     break
-                response.write(chunk)
+                await response.write(chunk)
             print("Done")
         return response
 
