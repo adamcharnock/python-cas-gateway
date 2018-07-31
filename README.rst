@@ -71,5 +71,14 @@ Updating docker hub
 
 .. code-block:: bash
 
+    # Update the Pipfile (if requirements in setup.py have changed)
+    pipenv install -e .
+
+    # Build image
     docker build -t adamcharnock/python-cas-gateway .
+
+    # Login to docker hub
+    docker login
+
+    # Push to registry
     docker push adamcharnock/python-cas-gateway

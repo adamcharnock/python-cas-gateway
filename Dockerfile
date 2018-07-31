@@ -8,8 +8,8 @@ RUN \
     rm -rf /var/cache/apk/*
 
 WORKDIR "/code"
-COPY ["setup.py", "/code"]
-RUN echo 0.0 > VERSION && python setup.py install
+COPY ["setup.py", "Pipfile*", "/code/"]
+RUN echo 0.0 > VERSION && pip install pipenv && pipenv install --deploy --system
 
 COPY ["python_cas_gateway", "/code/python_cas_gateway"]
 RUN python setup.py develop

@@ -20,6 +20,7 @@ setup(
         'aioredis>=1.0.0<2',
         'aiohttp-remotes==0.0.5',
         'boto3>=1.7.66,<1.8',
+        'async-timeout<3',
     ],
     include_package_data=True,
     entry_points={
