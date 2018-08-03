@@ -57,7 +57,13 @@ spec:
             - "--require-attribute"
             - {{ .Values.requireAttribute | quote }}
           resources:
+
 {{ toYaml .Values.resources | indent 12 }}
+
+          envFrom:
+          - configMapRef:
+              name: environment
+
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
